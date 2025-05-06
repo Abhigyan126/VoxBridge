@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const SIGNAL_SERVER = "ws://localhost:3001"; // ✅ Change to wss://yourdomain.com when hosted globally
+const SIGNAL_SERVER = "wss://voxbridge-nrxh.onrender.com"; // ✅ Change to wss://yourdomain.com when hosted globally
 const STUN_SERVER = { urls: "stun:stun.l.google.com:19302" };
 
 export default function Channel() {
