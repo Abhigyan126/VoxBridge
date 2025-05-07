@@ -12,6 +12,13 @@ export default function Channel() {
     const wsRef = useRef(null);
     const pcRef = useRef(null);
     const localStreamRef = useRef(null);
+    const [isRemoteMuted, setIsRemoteMuted] = useState(false);
+    const [isMicMuted, setIsMicMuted] = useState(false);
+    const [clientName, setClientName] = useState("");
+    const [clientList, setClientList] = useState([]);
+
+
+
 
     useEffect(() => {
         wsRef.current = new WebSocket(SIGNAL_SERVER);
@@ -51,6 +58,10 @@ export default function Channel() {
                             await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
                         }
                         break;
+                    case "client_list":
+                        setClientList(data.clients);
+                        break;
+
 
                     default:
                         console.warn("Unknown message type:", data.type);
@@ -101,20 +112,43 @@ export default function Channel() {
 
     const handleCreateRoom = () => {
         if (roomName.trim() === "") return alert("Enter a group name");
-        wsRef.current.send(JSON.stringify({ type: "create", roomName }));
+        wsRef.current.send(JSON.stringify({ type: "create", roomName, clientName }));
     };
 
     const handleJoinRoom = () => {
         if (roomCode.trim() === "") return alert("Enter a valid room code");
-        wsRef.current.send(JSON.stringify({ type: "join", roomCode }));
+        wsRef.current.send(JSON.stringify({ type: "join", roomCode, clientName }));
+    };
+
+    const toggleRemoteMute = () => {
+        const remoteAudio = document.getElementById("remoteAudio");
+        if (remoteAudio) {
+            remoteAudio.muted = !remoteAudio.muted;
+            setIsRemoteMuted(remoteAudio.muted);
+        }
+    };
+
+    const toggleMic = () => {
+        if (localStreamRef.current) {
+            const audioTrack = localStreamRef.current.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMicMuted(!audioTrack.enabled);
+            }
+        }
     };
 
     return (
         <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            <h2>React WebRTC P2P Voice Chat</h2>
+            <h2>Vox Bridge</h2>
 
             {!isCreated && !isJoined && (
                 <div>
+                  <input
+                      placeholder="Your Name"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                  />
                     <h4>Create a Room</h4>
                     <input
                         placeholder="Group Name"
@@ -141,11 +175,25 @@ export default function Channel() {
                     </button>
 
                     <div style={{ marginTop: "2rem" }}>
-                        <p><b>Local Audio:</b></p>
                         <audio id="localAudio" autoPlay muted />
-                        <p><b>Remote Audio:</b></p>
                         <audio id="remoteAudio" autoPlay />
+                        <button onClick={toggleRemoteMute}>
+                            {isRemoteMuted ? "Unmute Remote" : "Mute Remote"}
+                        </button>
+                        <button onClick={toggleMic}>
+                            {isMicMuted ? "Unmute Mic" : "Mute Mic"}
+                        </button>
                     </div>
+                    {clientList.length > 0 && (
+                        <div style={{ marginTop: "1rem" }}>
+                            <h4>Connected Clients:</h4>
+                            <ul>
+                                {clientList.map((name, idx) => (
+                                    <li key={idx}>{name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
