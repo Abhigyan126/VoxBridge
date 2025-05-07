@@ -12,6 +12,10 @@ export default function Channel() {
     const wsRef = useRef(null);
     const pcRef = useRef(null);
     const localStreamRef = useRef(null);
+    const [isRemoteMuted, setIsRemoteMuted] = useState(false);
+    const [isMicMuted, setIsMicMuted] = useState(false);
+
+
 
     useEffect(() => {
         wsRef.current = new WebSocket(SIGNAL_SERVER);
@@ -109,9 +113,27 @@ export default function Channel() {
         wsRef.current.send(JSON.stringify({ type: "join", roomCode }));
     };
 
+    const toggleRemoteMute = () => {
+        const remoteAudio = document.getElementById("remoteAudio");
+        if (remoteAudio) {
+            remoteAudio.muted = !remoteAudio.muted;
+            setIsRemoteMuted(remoteAudio.muted);
+        }
+    };
+
+    const toggleMic = () => {
+        if (localStreamRef.current) {
+            const audioTrack = localStreamRef.current.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMicMuted(!audioTrack.enabled);
+            }
+        }
+    };
+
     return (
         <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            <h2>React WebRTC P2P Voice Chat</h2>
+            <h2>Vox Bridge</h2>
 
             {!isCreated && !isJoined && (
                 <div>
@@ -141,10 +163,14 @@ export default function Channel() {
                     </button>
 
                     <div style={{ marginTop: "2rem" }}>
-                        <p><b>Local Audio:</b></p>
                         <audio id="localAudio" autoPlay muted />
-                        <p><b>Remote Audio:</b></p>
                         <audio id="remoteAudio" autoPlay />
+                        <button onClick={toggleRemoteMute}>
+                            {isRemoteMuted ? "Unmute Remote" : "Mute Remote"}
+                        </button>
+                        <button onClick={toggleMic}>
+                            {isMicMuted ? "Unmute Mic" : "Mute Mic"}
+                        </button>
                     </div>
                 </div>
             )}
