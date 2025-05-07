@@ -14,6 +14,9 @@ export default function Channel() {
     const localStreamRef = useRef(null);
     const [isRemoteMuted, setIsRemoteMuted] = useState(false);
     const [isMicMuted, setIsMicMuted] = useState(false);
+    const [clientName, setClientName] = useState("");
+    const [clientList, setClientList] = useState([]);
+
 
 
 
@@ -55,6 +58,10 @@ export default function Channel() {
                             await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
                         }
                         break;
+                    case "client_list":
+                        setClientList(data.clients);
+                        break;
+
 
                     default:
                         console.warn("Unknown message type:", data.type);
@@ -105,12 +112,12 @@ export default function Channel() {
 
     const handleCreateRoom = () => {
         if (roomName.trim() === "") return alert("Enter a group name");
-        wsRef.current.send(JSON.stringify({ type: "create", roomName }));
+        wsRef.current.send(JSON.stringify({ type: "create", roomName, clientName }));
     };
 
     const handleJoinRoom = () => {
         if (roomCode.trim() === "") return alert("Enter a valid room code");
-        wsRef.current.send(JSON.stringify({ type: "join", roomCode }));
+        wsRef.current.send(JSON.stringify({ type: "join", roomCode, clientName }));
     };
 
     const toggleRemoteMute = () => {
@@ -137,6 +144,11 @@ export default function Channel() {
 
             {!isCreated && !isJoined && (
                 <div>
+                  <input
+                      placeholder="Your Name"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                  />
                     <h4>Create a Room</h4>
                     <input
                         placeholder="Group Name"
@@ -172,6 +184,16 @@ export default function Channel() {
                             {isMicMuted ? "Unmute Mic" : "Mute Mic"}
                         </button>
                     </div>
+                    {clientList.length > 0 && (
+                        <div style={{ marginTop: "1rem" }}>
+                            <h4>Connected Clients:</h4>
+                            <ul>
+                                {clientList.map((name, idx) => (
+                                    <li key={idx}>{name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
